@@ -1,0 +1,14 @@
+[project]
+name = "meta-ai-dashboard"
+version = "0.1.0"
+description = "AI OpenEnv Dashboard"
+dependencies = [
+    "flask",
+    "flask-cors",
+    "psutil",
+    "openai",
+    "openenv>=0.2.0"
+]
+
+[project.scripts]
+server = "server.app:main"
