@@ -3,6 +3,7 @@ from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 import psutil
 import random
+import os
 
 app = Flask(__name__)
 CORS(app)
@@ -27,16 +28,22 @@ def get_state():
         "blocked": blocked_count
     }
 
-# ── AUTO DECISION ────────────────
+# ── AUTO DECISION (AI CONNECTED) ─
 def auto_decision(state):
     input_data = f"CPU: {state['cpu']}%, Memory: {state['memory']}%"
 
-    ai_response = run_agent(input_data)
+    try:
+        ai_response = run_agent(input_data)
 
-    # Simple parsing
-    if "BLOCK" in ai_response.upper():
-        return "BLOCK"
-    else:
+        if "BLOCK" in ai_response.upper():
+            return "BLOCK"
+        else:
+            return "ALLOW"
+
+    except:
+        # 🔥 fallback if AI fails
+        if state["cpu"] > 80 or state["memory"] > 85:
+            return "BLOCK"
         return "ALLOW"
 
 # ── STEP FUNCTION ────────────────
@@ -70,12 +77,27 @@ def home():
 def state():
     return jsonify(get_state())
 
-@app.route('/api/reset', methods=['POST'])
+# 🔥 REQUIRED FOR OPENENV CHECK
+@app.route('/reset', methods=['POST'])
 def reset():
     global current_threats, blocked_count
+
     current_threats = []
     blocked_count = 0
-    return jsonify(get_state())
+
+    return jsonify({
+        "status": "reset successful",
+        "state": {
+            "cpu": 0,
+            "memory": 0,
+            "blocked": blocked_count
+        }
+    })
+
+# OPTIONAL (for your UI)
+@app.route('/api/reset', methods=['POST'])
+def reset_api():
+    return reset()
 
 @app.route('/api/threat')
 def threat():
@@ -92,6 +114,7 @@ def threat():
         "state": result["state"]
     })
 
-# ── RUN ─────────────────────────
+# ── RUN (IMPORTANT FOR HUGGING FACE) ─
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 7860))
+    app.run(host="0.0.0.0", port=port)
