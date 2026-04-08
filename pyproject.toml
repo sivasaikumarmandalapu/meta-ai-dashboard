@@ -1,0 +1,10 @@
+[project]
+name = "meta-ai-dashboard"
+version = "0.1.0"
+description = "Real-time AI-powered OpenEnv dashboard"
+dependencies = [
+    "flask",
+    "flask-cors",
+    "psutil",
+    "openai"
+]
