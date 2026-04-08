@@ -1,0 +1,10 @@
+id: meta-ai-dashboard
+entrypoint: app.py
+
+env:
+  python: 3.11
+
+endpoints:
+  reset: /reset
+  state: /api/state
+  step: /api/threat
