@@ -1,4 +1,0 @@
-pip install uv
-uv init
-uv add flask flask-cors psutil openai openenv
-uv lock
