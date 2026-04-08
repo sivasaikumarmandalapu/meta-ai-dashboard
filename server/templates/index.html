@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Defense Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --neon-cyan:#00f5ff;--neon-green:#00ff88;--neon-red:#ff3366;--neon-orange:#ff6600;
+  --neon-yellow:#ffcc00;--panel-bg:rgba(5,15,30,0.92);--panel-border:rgba(0,245,255,0.2);
+  --grid-bg:#020c1b;--text-pri:#e0f4ff;--text-sec:#7bb8d0;--text-dim:#3a6a7a;
+}
+body{background:var(--grid-bg);font-family:'Rajdhani',sans-serif;color:var(--text-pri);overflow-x:hidden;min-height:100vh;min-width:900px}
+.grid-bg{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(0,245,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,255,0.03) 1px,transparent 1px);
+  background-size:40px 40px;}
+.scanline{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);}
+.app{position:relative;z-index:2;padding:10px}
+
+nav{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;margin-bottom:10px;
+  background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:8px;backdrop-filter:blur(10px);}
+.nav-brand{display:flex;align-items:center;gap:10px}
+.nav-icon{width:34px;height:34px;border:2px solid var(--neon-cyan);border-radius:6px;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 14px rgba(0,245,255,0.4);animation:pulse-border 2s ease-in-out infinite}
+@keyframes pulse-border{0%,100%{box-shadow:0 0 8px rgba(0,245,255,0.4)}50%{box-shadow:0 0 22px rgba(0,245,255,0.8)}}
+.nav-title{font-family:'Orbitron',monospace;font-size:15px;font-weight:700;color:var(--neon-cyan);letter-spacing:1.5px}
+.mode-toggle{display:flex;align-items:center;gap:4px;background:rgba(0,0,0,0.5);border:1px solid var(--panel-border);border-radius:6px;padding:3px}
+.mode-opt{padding:5px 18px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;transition:all .25s;letter-spacing:.5px;font-family:'Orbitron',monospace;user-select:none}
+.mode-opt.ai-active{background:linear-gradient(135deg,rgba(0,245,255,0.25),rgba(0,150,255,0.2));border:1px solid var(--neon-cyan);color:var(--neon-cyan);box-shadow:0 0 12px rgba(0,245,255,0.3)}
+.mode-opt.manual-active{background:linear-gradient(135deg,rgba(255,204,0,0.25),rgba(255,102,0,0.2));border:1px solid var(--neon-yellow);color:var(--neon-yellow);box-shadow:0 0 12px rgba(255,204,0,0.3)}
+.mode-opt:not(.ai-active):not(.manual-active){background:transparent;border:1px solid transparent;color:var(--text-dim)}
+.mode-dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:5px;animation:blink 1s step-end infinite}
+.mode-dot.ai{background:var(--neon-cyan)}
+.mode-dot.manual{background:var(--neon-yellow)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.nav-right{display:flex;align-items:center;gap:12px}
+.live-ind{display:flex;align-items:center;gap:5px;font-size:11px;font-family:'Share Tech Mono';color:var(--neon-green)}
+.live-dot{width:7px;height:7px;background:var(--neon-green);border-radius:50%;animation:blink 1s step-end infinite}
+.user-avatar{width:30px;height:30px;border-radius:50%;border:1px solid var(--panel-border);display:flex;align-items:center;justify-content:center;font-size:12px;background:rgba(0,245,255,0.1);color:var(--neon-cyan);font-weight:700}
+.nav-user{font-size:13px;color:var(--text-sec);font-weight:600;display:flex;align-items:center;gap:6px}
+
+.score-row{display:grid;grid-template-columns:1fr 1fr 1.2fr 1fr;gap:10px;margin-bottom:10px}
+.score-card{background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:12px;backdrop-filter:blur(8px)}
+.score-card.cyan-card{border-color:rgba(0,245,255,0.35);background:rgba(0,245,255,0.06)}
+.score-card.green-card{border-color:rgba(0,255,136,0.35);background:rgba(0,255,136,0.06)}
+.score-card.red-card{border-color:rgba(255,51,102,0.35);background:rgba(255,51,102,0.06)}
+.score-icon{width:38px;height:38px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.score-label{font-size:10px;color:var(--text-dim);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px}
+.score-value{font-family:'Orbitron',monospace;font-size:24px;font-weight:900;line-height:1}
+.score-sub{font-size:14px;color:var(--text-sec);font-weight:600;margin-left:4px}
+.cyan-val{color:var(--neon-cyan);text-shadow:0 0 14px rgba(0,245,255,0.6)}
+.green-val{color:var(--neon-green);text-shadow:0 0 14px rgba(0,255,136,0.6)}
+.red-val{color:var(--neon-red);text-shadow:0 0 14px rgba(255,51,102,0.6)}
+.badge{padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;letter-spacing:.5px}
+.badge-green{background:rgba(0,255,136,0.15);color:var(--neon-green);border:1px solid rgba(0,255,136,0.3)}
+.badge-red{background:rgba(255,51,102,0.15);color:var(--neon-red);border:1px solid rgba(255,51,102,0.3)}
+
+.main-grid{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:10px;margin-bottom:10px}
+.panel{background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:8px;padding:14px;backdrop-filter:blur(8px);position:relative;overflow:hidden}
+.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--neon-cyan),transparent);opacity:.5}
+.panel-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.panel-icon{font-size:14px}
+.panel-title{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--neon-cyan)}
+
+.threat-feed{background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:8px;padding:14px;backdrop-filter:blur(8px);margin-bottom:10px;position:relative;overflow:hidden}
+.threat-feed::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--neon-red),transparent);opacity:.7}
+.feed-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(0,245,255,0.06);font-size:13px;animation:fadeIn .4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.feed-item:last-child{border-bottom:none}
+.feed-time{font-family:'Share Tech Mono',monospace;color:var(--text-dim);font-size:11px;min-width:60px}
+.feed-icon{font-size:13px;min-width:18px}
+.feed-text{color:var(--text-sec);flex:1;font-size:12px}
+.feed-text strong{color:var(--neon-red)}
+.feed-badge-block{padding:2px 7px;border-radius:2px;font-size:10px;font-weight:700;border:1px solid;white-space:nowrap;font-family:'Orbitron',monospace}
+.fb-red{color:var(--neon-red);border-color:rgba(255,51,102,0.4);background:rgba(255,51,102,0.1)}
+.fb-orange{color:var(--neon-orange);border-color:rgba(255,102,0,0.4);background:rgba(255,102,0,0.1)}
+
+.globe-wrap{display:flex;align-items:center;justify-content:center;min-height:300px;position:relative}
+.globe-overlay{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:rgba(0,0,0,0.65);border:1px solid var(--panel-border);padding:5px 14px;border-radius:20px;white-space:nowrap}
+.globe-status{font-size:11px;color:var(--neon-green);font-weight:700;letter-spacing:.5px;display:flex;align-items:center;gap:5px}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--neon-green);animation:blink 1s step-end infinite}
+
+.task-table{width:100%;border-collapse:collapse;font-size:12px}
+.task-table th{padding:5px 8px;text-align:left;color:var(--text-dim);font-weight:700;font-size:10px;letter-spacing:1px;border-bottom:1px solid var(--panel-border);font-family:'Orbitron',monospace}
+.task-table td{padding:6px 8px;border-bottom:1px solid rgba(0,245,255,0.05);vertical-align:middle}
+.task-table tr:last-child td{border-bottom:none}
+.task-table tr:hover td{background:rgba(0,245,255,0.03)}
+.task-name{color:var(--text-pri);font-weight:600;font-size:11px}
+.task-state{font-family:'Share Tech Mono',monospace;color:var(--text-dim);font-size:9px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.task-score{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--neon-cyan)}
+.btn-block{padding:3px 10px;border-radius:3px;font-size:10px;font-weight:700;letter-spacing:.5px;border:none;cursor:pointer;font-family:'Orbitron',monospace}
+.btn-block.block{background:rgba(255,51,102,0.2);color:var(--neon-red);border:1px solid rgba(255,51,102,0.4)}
+.btn-block.allow{background:rgba(0,255,136,0.15);color:var(--neon-green);border:1px solid rgba(0,255,136,0.35)}
+
+.agent-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(0,245,255,0.06);font-size:12px}
+.agent-row:last-child{border-bottom:none}
+.agent-name{color:var(--text-pri);font-weight:600}
+.agent-status{font-family:'Orbitron',monospace;font-size:10px;font-weight:700}
+.ag-red{color:var(--neon-red)}
+.ag-cyan{color:var(--neon-cyan)}
+.ag-green{color:var(--neon-green)}
+.ag-orange{color:var(--neon-orange)}
+.action-btn{padding:6px 16px;background:linear-gradient(90deg,rgba(255,51,102,0.2),rgba(200,0,80,0.15));border:1px solid var(--neon-red);color:var(--neon-red);border-radius:5px;font-weight:700;font-size:12px;letter-spacing:1px;cursor:pointer;font-family:'Orbitron',monospace;width:100%;margin:10px 0;box-shadow:0 0 12px rgba(255,51,102,0.2);transition:all .2s}
+.action-btn:hover{box-shadow:0 0 20px rgba(255,51,102,0.4)}
+
+.atk-row{padding:5px 0}
+.atk-label{color:var(--text-sec);margin-bottom:4px;font-weight:600;font-size:12px}
+.atk-bar{height:6px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden}
+.atk-fill-red{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--neon-red),rgba(255,51,102,0.5));width:72%;transition:width .5s}
+.atk-fill-cyan{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--neon-cyan),rgba(0,245,255,0.4));width:55%;transition:width .5s}
+.atk-sub{font-size:10px;color:var(--text-dim);margin-top:3px;display:flex;justify-content:space-between;font-family:'Share Tech Mono'}
+
+.ring-label{text-align:center;margin-top:2px}
+.ring-label .rl-val{font-family:'Orbitron',monospace;font-size:26px;font-weight:900;color:var(--neon-green);text-shadow:0 0 16px rgba(0,255,136,0.5)}
+.ring-label .rl-sub{font-size:9px;color:var(--text-dim);letter-spacing:1px}
+
+.ctrl-row{display:flex;gap:10px;justify-content:center;margin-bottom:10px}
+.ctrl-btn{padding:9px 22px;border-radius:5px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:7px}
+.ctrl-btn.run{background:linear-gradient(135deg,rgba(0,255,136,0.2),rgba(0,200,100,0.1));border:1px solid var(--neon-green);color:var(--neon-green);box-shadow:0 0 12px rgba(0,255,136,0.2)}
+.ctrl-btn.run:hover{box-shadow:0 0 22px rgba(0,255,136,0.45);transform:translateY(-1px)}
+.ctrl-btn.pause{background:rgba(0,0,0,0.4);border:1px solid rgba(255,204,0,0.4);color:var(--neon-yellow)}
+.ctrl-btn.pause:hover{box-shadow:0 0 14px rgba(255,204,0,0.25);transform:translateY(-1px)}
+.ctrl-btn.reset{background:rgba(0,0,0,0.4);border:1px solid var(--panel-border);color:var(--text-sec)}
+.ctrl-btn.reset:hover{border-color:var(--neon-cyan);color:var(--neon-cyan);transform:translateY(-1px)}
+
+.footer{text-align:center;font-size:11px;color:var(--text-dim);padding:8px;font-family:'Share Tech Mono',monospace;letter-spacing:1px}
+.divider{width:1px;height:12px;background:var(--panel-border);margin:0 4px}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="scanline"></div>
+<div class="app">
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00f5ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+      </svg>
+    </div>
+    <span class="nav-title">CYBER DEFENSE DASHBOARD</span>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:14px">
+    <div style="padding:5px 16px;border-radius:4px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;background:rgba(0,245,255,0.12);border:1px solid var(--neon-cyan);color:var(--neon-cyan);cursor:pointer;letter-spacing:.5px">Dashboard</div>
+    <div class="divider"></div>
+    <div class="mode-toggle">
+      <div class="mode-opt ai-active" id="mode-ai" onclick="setMode('ai')">
+        <span class="mode-dot ai"></span>AI
+      </div>
+      <div class="mode-opt" id="mode-manual" onclick="setMode('manual')">
+        <span class="mode-dot manual"></span>MANUAL
+      </div>
+    </div>
+    <div style="font-size:10px;font-family:'Share Tech Mono';color:var(--neon-cyan)" id="mode-label">MODE: AI ACTIVE</div>
+  </div>
+
+  <div class="nav-right">
+    <div class="live-ind"><span class="live-dot"></span> LIVE</div>
+    <div class="divider" style="height:20px"></div>
+    <div class="nav-user">
+      <div class="user-avatar">A</div>
+      Admin ▾
+    </div>
+  </div>
+</nav>
+
+<!-- SCORE CARDS -->
+<div class="score-row">
+  <div class="score-card cyan-card">
+    <div class="score-icon" style="background:rgba(0,245,255,0.1);border:1px solid rgba(0,245,255,0.3)">🏆</div>
+    <div style="flex:1">
+      <div class="score-label">FINAL SCORE</div>
+      <div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap">
+        <span class="score-value cyan-val">8/10</span>
+        <span class="score-sub">80%</span>
+      </div>
+    </div>
+    <div class="badge badge-green" style="cursor:pointer;padding:4px 10px;white-space:nowrap;font-size:9px">● PAUSE DETAILS</div>
+  </div>
+  <div class="score-card green-card">
+    <div class="score-icon" style="background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.3);font-size:22px">✓</div>
+    <div>
+      <div class="score-label">ACCURACY</div>
+      <div style="display:flex;align-items:baseline;gap:6px">
+        <span class="score-value green-val">80%</span>
+        <span class="badge badge-green" style="font-size:9px">HIGH</span>
+      </div>
+    </div>
+  </div>
+  <div class="score-card" style="border-color:rgba(255,153,0,0.35);background:rgba(255,153,0,0.04);flex-direction:column;align-items:flex-start;padding:10px 14px">
+    <div class="score-label">RISK LEVEL</div>
+    <canvas id="gauge-mini" width="220" height="80"></canvas>
+    <div style="display:flex;justify-content:space-between;width:100%;font-size:10px;font-weight:700;margin-top:2px">
+      <span style="color:var(--neon-green)">LOW</span>
+      <span style="color:var(--neon-orange)">MEDIUM • CRITICAL</span>
+      <span style="color:var(--neon-red)">HIGH</span>
+    </div>
+  </div>
+  <div class="score-card red-card">
+    <div class="score-icon" style="background:rgba(255,51,102,0.1);border:1px solid rgba(255,51,102,0.3);font-size:20px">⚠</div>
+    <div>
+      <div class="score-label">THREATS</div>
+      <div style="display:flex;align-items:baseline;gap:6px">
+        <span class="score-value red-val" id="threat-count">30</span>
+        <span class="badge badge-red" style="font-size:9px">▼ LAST 24H</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN 3-COL GRID -->
+<div class="main-grid">
+
+  <!-- LEFT -->
+  <div>
+    <div class="threat-feed">
+      <div class="panel-header">
+        <div class="panel-icon">📡</div>
+        <div class="panel-title">LIVE THREAT FEED</div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:5px;font-size:10px;color:var(--neon-red)">
+          <span style="width:5px;height:5px;background:var(--neon-red);border-radius:50%;display:inline-block;animation:blink .6s step-end infinite"></span>
+          STREAMING
+        </div>
+      </div>
+      <div id="feed-list"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-icon">📋</div>
+        <div class="panel-title">TASK RESULTS</div>
+      </div>
+      <table class="task-table">
+        <thead>
+          <tr>
+            <th>TASK</th>
+            <th>STATE</th>
+            <th>DECISION</th>
+            <th>SCORE</th>
+          </tr>
+        </thead>
+        <tbody id="task-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CENTER: GLOBE -->
+  <div class="panel" style="display:flex;flex-direction:column;padding:10px">
+    <div class="globe-wrap" style="flex:1">
+      <canvas id="globe" width="300" height="300"></canvas>
+      <div class="globe-overlay">
+        <div class="globe-status"><span class="status-dot"></span>ACTIVE MONITORING</div>
+        <div class="divider"></div>
+        <div style="font-size:10px;color:var(--text-dim);font-family:'Share Tech Mono'">DROP: ACTIVE</div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:center;align-items:center;gap:20px;margin-top:10px;padding:10px 0;border-top:1px solid var(--panel-border)">
+      <div style="text-align:center">
+        <canvas id="ring" width="100" height="100"></canvas>
+        <div class="ring-label"><div class="rl-val">80%</div><div class="rl-sub">OVERALL SCORE</div></div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text-dim);letter-spacing:.5px;margin-bottom:3px">LIVE TIME</div>
+        <div style="font-family:'Share Tech Mono';font-size:18px;color:var(--neon-cyan)" id="live-time">--:--:--</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:8px;letter-spacing:.5px">THREATS BLOCKED</div>
+        <div style="font-family:'Orbitron',monospace;font-size:22px;font-weight:700;color:var(--neon-red)" id="blocked-count">24</div>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:4px" id="status-text">STATUS: ACTIVE</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div>
+    <div class="panel" style="margin-bottom:10px">
+      <div class="panel-header" style="justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="panel-icon">🤖</div>
+          <div class="panel-title">AGENT ANALYSIS</div>
+        </div>
+        <div style="font-size:10px;color:var(--neon-yellow);font-family:'Orbitron',monospace;cursor:pointer" id="agent-mode-label">AUTO ▼</div>
+      </div>
+      <div class="agent-row">
+        <span class="agent-name">Threat Agent</span>
+        <span class="agent-status ag-red">HIGH RISK</span>
+        <span style="font-size:10px;color:var(--text-dim)">0/1%</span>
+      </div>
+      <div class="agent-row">
+        <span class="agent-name">System Agent</span>
+        <span class="agent-status ag-cyan">MEMORY 92%</span>
+      </div>
+      <div class="agent-row">
+        <span class="agent-name">Decision Agent</span>
+        <span class="agent-status ag-green">96%</span>
+      </div>
+      <button class="action-btn">✕ ACTION — BLOCK</button>
+      <div class="agent-row">
+        <span class="agent-name" style="display:flex;align-items:center;gap:5px"><span style="color:var(--neon-green)">✓</span>Threat Agent</span>
+        <span class="agent-status ag-green">ACTIVE ✓</span>
+      </div>
+      <div class="agent-row">
+        <span class="agent-name" style="display:flex;align-items:center;gap:5px"><span style="color:var(--neon-green)">✓</span>System Agent</span>
+        <span class="agent-status ag-orange">LEARNING ✓</span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:10px">
+      <div class="panel-header" style="justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="panel-icon">⚔</div>
+          <div class="panel-title">ATTACK VS DEFENSE</div>
+        </div>
+      </div>
+      <div class="atk-row">
+        <div class="atk-label">Login Attack</div>
+        <div class="atk-bar"><div class="atk-fill-red"></div></div>
+        <div class="atk-sub"><span>DETECTION</span><span>SERVERS ▶</span></div>
+      </div>
+      <div class="atk-row" style="margin-top:8px">
+        <div class="atk-label" style="color:var(--neon-cyan)">Defense Response</div>
+        <div class="atk-bar"><div class="atk-fill-cyan"></div></div>
+        <div class="atk-sub"><span>COGNITO</span><span>SENTINEL</span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header" style="justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="panel-icon">📈</div>
+          <div class="panel-title">PERFORMANCE</div>
+        </div>
+        <span style="font-size:10px;color:var(--neon-green);font-family:'Orbitron',monospace">↑ TREND</span>
+      </div>
+      <canvas id="perf" width="300" height="90" style="width:100%;height:90px"></canvas>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-dim);margin-top:6px;font-family:'Share Tech Mono'">
+        <span>Insider Leak</span><span>Brute Attack</span><span>Memory Leak</span><span>DDoS Attack</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTROLS -->
+<div class="ctrl-row">
+  <button class="ctrl-btn run" onclick="runNewAttack()">▶ RUN NEW ATTACK</button>
+  <button class="ctrl-btn pause" id="pause-btn" onclick="togglePause()">⏸ PAUSE SYSTEM</button>
+  <button class="ctrl-btn reset" onclick="resetSystem()">⟳ RESET SYSTEM</button>
+</div>
+
+<div class="footer">CYBER DEFENSE HACKATHON — 2024 &nbsp;|&nbsp; AI DEFENSE MATRIX v3.2 &nbsp;|&nbsp; ALL SYSTEMS NOMINAL</div>
+</div>
+
+<script>
+// ── STATE ─────────────────────────────
+let paused = false;
+let mode = "ai";
+
+// ── MODE ─────────────────────────────
+function setMode(m) {
+  mode = m;
+  const ai = document.getElementById('mode-ai');
+  const man = document.getElementById('mode-manual');
+  const lbl = document.getElementById('mode-label');
+  const agLbl = document.getElementById('agent-mode-label');
+  if (m === 'ai') {
+    ai.className = 'mode-opt ai-active';
+    man.className = 'mode-opt';
+    lbl.textContent = 'MODE: AI ACTIVE';
+    agLbl.textContent = 'AUTO ▼';
+  } else {
+    man.className = 'mode-opt manual-active';
+    ai.className = 'mode-opt';
+    lbl.textContent = 'MODE: MANUAL';
+    agLbl.textContent = 'MANUAL ▼';
+  }
+}
+
+// ── CLOCK ─────────────────────────────
+function updateClock() {
+  document.getElementById('live-time').textContent =
+    new Date().toTimeString().split(' ')[0];
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── REAL SYSTEM DATA ──────────────────
+async function updateSystem() {
+  const res = await fetch('/api/state');
+  const data = await res.json();
+  document.getElementById('status-text').textContent =
+    `CPU: ${data.cpu}% | MEM: ${data.memory}%`;
+  document.getElementById('blocked-count').textContent =
+    data.blocked;
+}
+setInterval(updateSystem, 2000);
+
+// ── REAL THREAT FEED ──────────────────
+async function fetchThreat() {
+  if (paused || mode === "manual") return;
+  const res = await fetch('/api/threat');
+  const data = await res.json();
+  const fl = document.getElementById('feed-list');
+  const div = document.createElement('div');
+  div.className = 'feed-item';
+  const now = new Date().toTimeString().split(' ')[0];
+  div.innerHTML = `
+    <span class="feed-time">${now}</span>
+    <span class="feed-icon">⚠</span>
+    <span class="feed-text"><strong>${data.decision}</strong> → ${data.threat}</span>
+    <span class="feed-badge-block fb-red">LIVE</span>
+  `;
+  fl.insertBefore(div, fl.firstChild);
+  while (fl.children.length > 4)
+    fl.removeChild(fl.lastChild);
+}
+setInterval(fetchThreat, 4000);
+
+// ── CONTROLS ─────────────────────────
+function togglePause() {
+  paused = !paused;
+  const btn = document.getElementById('pause-btn');
+  btn.textContent = paused
+    ? '▶ RESUME SYSTEM'
+    : '⏸ PAUSE SYSTEM';
+  document.getElementById('status-text').textContent =
+    paused ? 'SYSTEM PAUSED' : 'SYSTEM ACTIVE';
+}
+async function resetSystem() {
+  await fetch('/api/reset', { method: 'POST' });
+  location.reload();
+}
+function runNewAttack() {
+  alert("⚡ Controlled by AI Agent");
+}
+
+// ── TASKS ──────────────────────────────────────────────
+const tasks = [
+  {name:'Insider Data Leak',state:'{failed_attempts: 6}',dec:'BLOCK',score:'96%'},
+  {name:'Brute Force Attack',state:'{failed_attempts: 6}',dec:'BLOCK',score:'96%'},
+  {name:'Memory Leak Attack',state:'{failed_attempts: 20}',dec:'BLOCK',score:'96%'},
+  {name:'DDoS Simulation',state:'{failed_traffic: 8}',dec:'ALLOW',score:'86%'},
+  {name:'Unauth File Access',state:'{sensitive_access: 6}',dec:'BLOCK',score:'92%'},
+];
+(function renderTasks(){
+  document.getElementById('task-body').innerHTML = tasks.map(t=>`<tr>
+    <td class="task-name">${t.name}</td>
+    <td class="task-state">${t.state}</td>
+    <td><button class="btn-block ${t.dec.toLowerCase()}">${t.dec}</button></td>
+    <td class="task-score">${t.score}</td>
+  </tr>`).join('');
+})();
+
+// ── GAUGE ──────────────────────────────────────────────
+(function drawGauge(){
+  const c = document.getElementById('gauge-mini');
+  const ctx = c.getContext('2d');
+  const W=220,H=80,cx=W/2,cy=H-6,r=65;
+  ctx.clearRect(0,0,W,H);
+  [{s:Math.PI,e:Math.PI*1.33,col:'rgba(0,255,136,0.75)'},{s:Math.PI*1.33,e:Math.PI*1.67,col:'rgba(255,153,0,0.75)'},{s:Math.PI*1.67,e:Math.PI*2,col:'rgba(255,51,102,0.75)'}].forEach(sg=>{
+    ctx.beginPath(); ctx.arc(cx,cy,r,sg.s,sg.e);
+    ctx.strokeStyle=sg.col; ctx.lineWidth=10; ctx.stroke();
+  });
+  const ang = Math.PI + Math.PI*0.73;
+  ctx.beginPath(); ctx.moveTo(cx-Math.cos(ang)*8,cy-Math.sin(ang)*8);
+  ctx.lineTo(cx+Math.cos(ang)*r*0.9,cy+Math.sin(ang)*r*0.9);
+  ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.lineCap='round'; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx,cy,5,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
+  ctx.fillStyle='rgba(255,51,102,0.9)'; ctx.font='bold 9px Orbitron,monospace'; ctx.textAlign='center'; ctx.fillText('HIGH',cx+r*0.5,cy-r*0.5);
+})();
+
+// ── RING ───────────────────────────────────────────────
+(function drawRing(){
+  const c = document.getElementById('ring');
+  const ctx = c.getContext('2d');
+  const W=100,H=100,cx=W/2,cy=H/2,r=38;
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.strokeStyle='rgba(0,245,255,0.1)'; ctx.lineWidth=8; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+Math.PI*2*0.8);
+  const grad=ctx.createLinearGradient(0,0,W,0);
+  grad.addColorStop(0,'#00ff88'); grad.addColorStop(1,'#00f5ff');
+  ctx.strokeStyle=grad; ctx.lineWidth=8; ctx.lineCap='round'; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx,cy,r-8,-Math.PI/2,-Math.PI/2+Math.PI*2*0.8);
+  ctx.strokeStyle='rgba(0,255,136,0.18)'; ctx.lineWidth=14; ctx.stroke();
+})();
+
+// ── PERFORMANCE CHART ─────────────────────────────────
+(function drawPerf(){
+  const c = document.getElementById('perf');
+  const ctx = c.getContext('2d');
+  const W=c.width,H=90;
+  ctx.clearRect(0,0,W,H);
+  for(let y=15;y<=75;y+=20){ctx.beginPath();ctx.moveTo(20,y);ctx.lineTo(W-10,y);ctx.strokeStyle='rgba(0,245,255,0.07)';ctx.lineWidth=1;ctx.stroke();}
+  function drawLine(pts,col,alpha=1){
+    ctx.beginPath(); pts.forEach((p,i)=>i===0?ctx.moveTo(p[0],p[1]):ctx.lineTo(p[0],p[1]));
+    ctx.strokeStyle=col;ctx.lineWidth=2;ctx.lineCap='round';ctx.lineJoin='round';ctx.globalAlpha=alpha;ctx.stroke();ctx.globalAlpha=1;
+    pts.forEach(p=>{ctx.beginPath();ctx.arc(p[0],p[1],3.5,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();});
+    ctx.beginPath(); pts.forEach((p,i)=>i===0?ctx.moveTo(p[0],p[1]):ctx.lineTo(p[0],p[1]));
+    ctx.strokeStyle=col;ctx.lineWidth=8;ctx.globalAlpha=0.13;ctx.stroke();ctx.globalAlpha=1;
+  }
+  drawLine([[30,72],[90,52],[155,28],[220,20],[275,14]],'#00f5ff');
+  drawLine([[30,80],[90,70],[155,48],[220,40],[275,32]],'#ff3366',0.55);
+  ctx.fillStyle='rgba(0,245,255,0.4)';ctx.font='9px Share Tech Mono,monospace';
+  ['1.0','0.5','0.0'].forEach((v,i)=>{ctx.fillText(v,0,20+i*28);});
+})();
+
+// ── GLOBE ─────────────────────────────────────────────
+const gc = document.getElementById('globe');
+const gctx = gc.getContext('2d');
+const RADIUS=130, CX=150, CY=150;
+let frame = 0;
+let angle = 0;
+
+const attacks = [
+  {lat:40.7,lon:-74,active:true},{lat:51.5,lon:-0.1,active:false},{lat:48.8,lon:2.3,active:true},
+  {lat:35.6,lon:139.7,active:true},{lat:-23.5,lon:-46.6,active:false},{lat:55.7,lon:37.6,active:true},
+  {lat:28.6,lon:77.2,active:false},{lat:31.2,lon:121.4,active:true},{lat:-33.8,lon:151.2,active:false},
+  {lat:1.3,lon:103.8,active:true},{lat:19.4,lon:-99.1,active:true},{lat:52.5,lon:13.4,active:false},
+  {lat:37.5,lon:127.0,active:true},{lat:43.6,lon:-79.3,active:false},{lat:-34.6,lon:-58.4,active:true},
+  {lat:60.0,lon:10.7,active:false},{lat:41.0,lon:29.0,active:true},{lat:25.2,lon:55.3,active:false},
+];
+const lines = [{f:0,t:5},{f:1,t:7},{f:3,t:2},{f:6,t:9},{f:10,t:0},{f:13,t:5},{f:11,t:4},{f:16,t:1}];
+
+function ll2xyz(lat,lon,r) {
+  const phi=(90-lat)*Math.PI/180, theta=(lon+angle)*Math.PI/180;
+  return {x:r*Math.sin(phi)*Math.cos(theta),y:r*Math.cos(phi),z:r*Math.sin(phi)*Math.sin(theta)};
+}
+function proj(p){return{x:CX+p.x,y:CY-p.y,vis:p.z>-15};}
+
+function drawGlobe() {
+  if (!paused) { frame++; angle+=0.14; }
+  gctx.clearRect(0,0,300,300);
+
+  const aura=gctx.createRadialGradient(CX,CY,RADIUS-5,CX,CY,RADIUS+28);
+  aura.addColorStop(0,'rgba(0,245,255,0.1)'); aura.addColorStop(1,'rgba(0,245,255,0)');
+  gctx.beginPath(); gctx.arc(CX,CY,RADIUS+28,0,Math.PI*2); gctx.fillStyle=aura; gctx.fill();
+
+  const bg=gctx.createRadialGradient(CX-35,CY-35,0,CX,CY,RADIUS);
+  bg.addColorStop(0,'rgba(0,45,90,0.96)'); bg.addColorStop(0.5,'rgba(0,22,55,0.93)'); bg.addColorStop(1,'rgba(0,8,28,0.97)');
+  gctx.beginPath(); gctx.arc(CX,CY,RADIUS,0,Math.PI*2); gctx.fillStyle=bg; gctx.fill();
+
+  for(let lat=-75;lat<=75;lat+=25){
+    const phi=(90-lat)*Math.PI/180;
+    const ry=RADIUS*Math.cos(phi), rx=Math.abs(RADIUS*Math.sin(phi));
+    if(rx<2)continue;
+    gctx.beginPath(); gctx.ellipse(CX,CY-ry,rx,rx*0.14,0,0,Math.PI*2);
+    gctx.strokeStyle='rgba(0,245,255,0.1)'; gctx.lineWidth=0.5; gctx.stroke();
+  }
+  for(let i=0;i<10;i++){
+    gctx.save(); gctx.translate(CX,CY); gctx.rotate((i/10)*Math.PI+angle*Math.PI/180);
+    gctx.beginPath(); gctx.ellipse(0,0,RADIUS*0.16,RADIUS,0,0,Math.PI*2);
+    gctx.strokeStyle='rgba(0,245,255,0.07)'; gctx.lineWidth=0.5; gctx.stroke(); gctx.restore();
+  }
+  gctx.beginPath(); gctx.ellipse(CX,CY,RADIUS,RADIUS*0.14,0,0,Math.PI*2);
+  gctx.strokeStyle='rgba(0,245,255,0.22)'; gctx.lineWidth=1; gctx.stroke();
+
+  lines.forEach((al,i)=>{
+    const a=attacks[al.f], b=attacks[al.t];
+    const pa=ll2xyz(a.lat,a.lon,RADIUS), pb=ll2xyz(b.lat,b.lon,RADIUS);
+    const ppa=proj(pa), ppb=proj(pb);
+    if(!ppa.vis||!ppb.vis)return;
+    const pulse=(Math.sin(frame*0.055+i*1.3)+1)/2;
+    gctx.beginPath(); gctx.moveTo(ppa.x,ppa.y);
+    const mx=(ppa.x+ppb.x)/2, my=(ppa.y+ppb.y)/2-28;
+    gctx.quadraticCurveTo(mx,my,ppb.x,ppb.y);
+    gctx.strokeStyle=i%2===0?`rgba(255,51,102,${0.35+pulse*0.6})`:`rgba(255,204,0,${0.3+pulse*0.5})`;
+    gctx.lineWidth=1.5; gctx.setLineDash([4,3]); gctx.stroke(); gctx.setLineDash([]);
+  });
+
+  attacks.forEach((atk,i)=>{
+    const p3=ll2xyz(atk.lat,atk.lon,RADIUS), pp=proj(p3);
+    if(!pp.vis)return;
+    const pulse=(Math.sin(frame*0.05+i*0.8)+1)/2;
+    if(atk.active){
+      gctx.beginPath(); gctx.arc(pp.x,pp.y,4+pulse*6,0,Math.PI*2);
+      gctx.strokeStyle=`rgba(255,51,102,${0.5-pulse*0.4})`; gctx.lineWidth=1; gctx.stroke();
+    }
+    gctx.beginPath(); gctx.arc(pp.x,pp.y,atk.active?4:2.5,0,Math.PI*2);
+    gctx.fillStyle=atk.active?`rgba(255,51,102,${0.75+pulse*0.25})`:`rgba(255,153,0,${0.55+pulse*0.2})`; gctx.fill();
+    if(atk.active){
+      const g=gctx.createRadialGradient(pp.x,pp.y,0,pp.x,pp.y,10);
+      g.addColorStop(0,'rgba(255,51,102,0.4)'); g.addColorStop(1,'rgba(0,0,0,0)');
+      gctx.beginPath(); gctx.arc(pp.x,pp.y,10,0,Math.PI*2); gctx.fillStyle=g; gctx.fill();
+    }
+  });
+
+  gctx.beginPath(); gctx.arc(CX,CY,RADIUS,0,Math.PI*2);
+  gctx.strokeStyle='rgba(0,245,255,0.45)'; gctx.lineWidth=1.5; gctx.stroke();
+  const hi=gctx.createRadialGradient(CX-45,CY-45,0,CX-45,CY-45,80);
+  hi.addColorStop(0,'rgba(0,245,255,0.14)'); hi.addColorStop(1,'rgba(0,0,0,0)');
+  gctx.beginPath(); gctx.arc(CX,CY,RADIUS,0,Math.PI*2); gctx.fillStyle=hi; gctx.fill();
+
+  requestAnimationFrame(drawGlobe);
+}
+drawGlobe();
+</script>
+</body>
+</html>
