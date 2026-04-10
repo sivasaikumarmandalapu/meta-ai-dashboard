@@ -1,18 +1,20 @@
+version: "1"
+
 tasks:
-  - name: monitoring
+  monitoring:
     description: Monitor system CPU and memory
     grader:
-      type: regex
-      pattern: ".*"
+      type: score
+      max_score: 1
 
-  - name: threat_detection
-    description: Detect system threats
+  threat_detection:
+    description: Detect threats in system
     grader:
-      type: regex
-      pattern: ".*"
+      type: score
+      max_score: 1
 
-  - name: decision_making
-    description: Decide whether to allow or block
+  decision_making:
+    description: Decide whether to BLOCK or ALLOW
     grader:
-      type: regex
-      pattern: ".*"
+      type: score
+      max_score: 1
