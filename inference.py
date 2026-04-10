@@ -1,34 +1,27 @@
 import os
 from openai import OpenAI
 
-# ✅ SAFE ENV FETCH (IMPORTANT)
-API_BASE_URL = os.environ.get("API_BASE_URL")
-API_KEY = os.environ.get("API_KEY")
-MODEL_NAME = os.environ.get("MODEL_NAME")
-
-client = None
-
-# ✅ CREATE CLIENT ONLY IF VARIABLES EXIST
-if API_BASE_URL and API_KEY and MODEL_NAME:
-    client = OpenAI(
-        api_key=API_KEY,
-        base_url=API_BASE_URL
-    )
-
 
 def run_agent(input_data="system check"):
     try:
-        if client:
-            response = client.chat.completions.create(
-                model=MODEL_NAME,
-                messages=[
-                    {"role": "system", "content": "You are a cybersecurity agent. Reply only BLOCK or ALLOW."},
-                    {"role": "user", "content": input_data}
-                ]
-            )
-            return response.choices[0].message.content.strip()
-        else:
-            return "ALLOW"
+        # ✅ CREATE CLIENT INSIDE FUNCTION (CRITICAL FIX)
+        client = OpenAI(
+            api_key=os.environ.get("API_KEY"),
+            base_url=os.environ.get("API_BASE_URL")
+        )
+
+        model = os.environ.get("MODEL_NAME")
+
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "You are a cybersecurity agent. Reply only BLOCK or ALLOW."},
+                {"role": "user", "content": input_data}
+            ]
+        )
+
+        return response.choices[0].message.content.strip()
+
     except:
         return "ALLOW"
 
