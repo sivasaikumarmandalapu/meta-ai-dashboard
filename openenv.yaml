@@ -1,10 +1,18 @@
-id: meta-ai-dashboard
-entrypoint: app.py
+tasks:
+  - name: monitoring
+    description: Monitor system CPU and memory
+    grader:
+      type: regex
+      pattern: ".*"
 
-env:
-  python: 3.11
+  - name: threat_detection
+    description: Detect system threats
+    grader:
+      type: regex
+      pattern: ".*"
 
-endpoints:
-  reset: /reset
-  state: /api/state
-  step: /api/threat
+  - name: decision_making
+    description: Decide whether to allow or block
+    grader:
+      type: regex
+      pattern: ".*"
